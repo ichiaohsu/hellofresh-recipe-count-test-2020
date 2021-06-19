@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"example.com/recipecount/internal/storage/sqlite"
 	"example.com/recipecount/pkg/recipe"
 	"flag"
@@ -10,82 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"os"
-	"strings"
-	"time"
 )
-
-func ReadJSON(db *sqlx.DB) error {
-	start := time.Now()
-	file, err := os.Open("hf_test_calculation_fixtures.json")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	var jsonContent []recipe.Recipe
-	if err := json.NewDecoder(file).Decode(&jsonContent); err != nil {
-		return err
-	}
-	count := 0
-	fmt.Printf("time usage after read json:%v\n", time.Now().Sub(start))
-	for _, r := range jsonContent {
-		_, err = db.Exec(`INSERT INTO recipe (recipe, postcode, delivery_from, delivery_to) VALUES (?, ?, ?, ?);`, r.Recipe, r.Postcode, r.Delivery.From, r.Delivery.To)
-		if err != nil {
-			return err
-		}
-		count++
-		fmt.Printf("count:%d recipe:%s\n", count, r.Recipe)
-	}
-
-	// read open bracket
-	//dec := json.NewDecoder(file)
-	//t, err := dec.Token()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//fmt.Printf("%T: %v\n", t, t)
-	//count := 0
-	//// while the array contains values
-	//for dec.More() {
-	//	var r recipe.Recipe
-	//	// decode an array value (Message)
-	//	if err := dec.Decode(&r); err != nil {
-	//		log.Fatalf("cannot unmarshal json file: %s\n", err.Error())
-	//	}
-	//	_, err = db.Exec(`INSERT INTO recipe (recipe, postcode, delivery_from, delivery_to) VALUES (?, ?, ?, ?);`, r.Recipe, r.Postcode, r.Delivery.From, r.Delivery.To)
-	//	if err != nil {
-	//		log.Println(err)
-	//	}
-	//	count++
-	//	fmt.Printf("count:%d recipe:%s\n", count, r.Recipe)
-	//}
-	//// finish token
-	//t, err = dec.Token()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//fmt.Printf("%T: %v\n", t, t)
-	diff := time.Now().Sub(start)
-	fmt.Printf("time usage:%v\n", diff)
-	return nil
-}
-
-type recipeName []string
-
-func (r *recipeName) String() string {
-	return fmt.Sprint(*r)
-}
-
-func (r *recipeName) Set(value string) error {
-	if len(*r) > 0 {
-		return errors.New("interval flag already set")
-	}
-	for _, dn := range strings.Split(value, ",") {
-		*r = append(*r, dn)
-	}
-	return nil
-}
 
 func main() {
 	// parse arguments
@@ -97,17 +21,13 @@ func main() {
 
 	flag.Parse()
 
-	db, err := sqlite.NewDB()
-	if err != nil {
-		log.Printf("creating table error: %s\n", err.Error())
-	}
+	db := sqlx.MustConnect("sqlite3", "./recipe.db")
 	defer db.Close()
 
 	s := sqlite.NewStorage(db)
 	// create service
 	svc := recipe.NewService(s)
 
-	//s.DB.Prepare("INSERT INTO ")
 	o, err := svc.GetJSONOutput(*postcode, *deliverFrom, *deliverTo, namesFlag)
 	if err != nil {
 		log.Println(err)

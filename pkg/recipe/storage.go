@@ -1,3 +1,4 @@
+//go:generate mockgen -package=mocks -source=storage.go -destination=../../internal/mocks/mock_storage.go
 package recipe
 
 type Counter interface {

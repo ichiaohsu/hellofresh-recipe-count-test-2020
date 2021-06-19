@@ -1,7 +1,6 @@
 package recipe
 
 import (
-	"log"
 	"strconv"
 )
 
@@ -25,15 +24,15 @@ func (s service) GetJSONOutput(postcode string, from int, to int, names []string
 	)
 	result.UniqueRecipeCount, err = s.store.CountDistinctRecipe()
 	if err != nil {
-		log.Println(err)
+		return JSONOutput{}, err
 	}
 	result.CountPerRecipe, err = s.store.CountGroupByRecipe()
 	if err != nil {
-		log.Println(err)
+		return JSONOutput{}, err
 	}
 	result.BusiestPostcode, err = s.store.CountBusiestPostcode()
 	if err != nil {
-		log.Println(err)
+		return JSONOutput{}, err
 	}
 	result.CountPerPostcodeAndTime.Postcode = postcode
 	result.CountPerPostcodeAndTime.From = strconv.FormatInt(int64(from), 10) + "AM"
@@ -43,12 +42,12 @@ func (s service) GetJSONOutput(postcode string, from int, to int, names []string
 	}
 	result.CountPerPostcodeAndTime.DeliveryCount, err = s.store.CountPerPostcodeAndTime(postcode, from, to)
 	if err != nil {
-		log.Println(err)
+		return JSONOutput{}, err
 	}
 
 	result.MatchByName, err = s.store.MatchRecipeByName(names...)
 	if err != nil {
-		log.Println(err)
+		return JSONOutput{}, err
 	}
 	return result, nil
 }

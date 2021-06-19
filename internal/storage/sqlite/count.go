@@ -3,7 +3,6 @@ package sqlite
 import (
 	"example.com/recipecount/pkg/recipe"
 	"github.com/jmoiron/sqlx"
-	"log"
 	"strings"
 )
 
@@ -32,7 +31,6 @@ func (s Storage) CountGroupByRecipe() ([]recipe.PerRecipe, error) {
 func (s Storage) CountBusiestPostcode() (recipe.BusiestPostcode, error) {
 	var result recipe.BusiestPostcode
 	if err := s.DB.Get(&result, "SELECT postcode, COUNT(*) AS delivery_count FROM "+tableNameRecipe+" GROUP BY postcode ORDER BY delivery_count DESC LIMIT 1;"); err != nil {
-		log.Println(err)
 		return recipe.BusiestPostcode{}, err
 	}
 	return result, nil
@@ -41,7 +39,6 @@ func (s Storage) CountBusiestPostcode() (recipe.BusiestPostcode, error) {
 func (s Storage) CountPerPostcodeAndTime(postcode string, from int, to int) (int, error) {
 	var count int
 	if err := s.DB.Get(&count, "SELECT COUNT(recipe_id) AS delivery_count FROM "+tableNameRecipe+" WHERE postcode = ? AND delivery_from >= ? AND delivery_to <= ?", postcode, from, to); err != nil {
-		log.Println(err)
 		return 0, err
 	}
 	return count, nil
